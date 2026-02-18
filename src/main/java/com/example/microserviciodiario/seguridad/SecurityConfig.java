@@ -17,6 +17,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -32,18 +37,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Habilitar CORS
                 .csrf(AbstractHttpConfigurer::disable) // Desactivar CSRF para APIs REST
                 .authorizeHttpRequests(authz -> authz
                         // RUTAS PÚBLICAS (Permitir entrar sin token)
-                        // Ajusta estas rutas si tu controlador tiene otras
                         .requestMatchers("/api/auth/login", "/api/usuarios/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll() // Permitir registrarse
 
+                        // TODO: TEMPORAL - Quitar esto cuando el microservicio de autenticación esté
+                        // listo
+                        .requestMatchers("/api/diarios/**").permitAll() // Diarios públicos temporalmente
+
                         // RUTAS PRIVADAS (Todo lo demás requiere token)
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // No guardar sesión en memoria (usamos Token)
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // No guardar sesión en memoria (usamos
+                                                                                // Token)
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -51,13 +60,27 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 2. Configuración del Encriptador de Contraseñas (BCrypt)
+    // 2. Configuración de CORS (Permitir peticiones del frontend Angular)
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    // 3. Configuración del Encriptador de Contraseñas (BCrypt)
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 3. Proveedor de Autenticación (conecta BBDD y Encriptador)
+    // 4. Proveedor de Autenticación (conecta BBDD y Encriptador)
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -66,7 +89,7 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    // 4. Manager de Autenticación (lo usaremos en el Login)
+    // 5. Manager de Autenticación (lo usaremos en el Login)
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();

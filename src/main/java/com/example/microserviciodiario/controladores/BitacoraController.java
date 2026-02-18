@@ -27,7 +27,7 @@ public class BitacoraController {
             @RequestBody BitacoraRequestDTO dto,
             Authentication authentication) {
 
-        String email = authentication.getName();
+        String email = (authentication != null) ? authentication.getName() : "test@example.com";
         try {
             BitacoraEmocional nueva = bitacoraService.crearBitacora(diarioId, dto, email);
             return new ResponseEntity<>(nueva, HttpStatus.CREATED);
@@ -42,7 +42,7 @@ public class BitacoraController {
             @PathVariable UUID diarioId,
             Authentication authentication) {
 
-        String email = authentication.getName();
+        String email = (authentication != null) ? authentication.getName() : "test@example.com";
         try {
             return ResponseEntity.ok(bitacoraService.listarPorDiario(diarioId, email));
         } catch (RuntimeException e) {
