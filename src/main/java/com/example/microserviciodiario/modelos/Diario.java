@@ -38,6 +38,10 @@ public class Diario {
     @JsonIgnore // <--- AGREGAR ESTO
     private List<ArchivoMultimedia> archivos;
 
+    @OneToMany(mappedBy = "diario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<MensajeDiario> mensajes;
+
     @PrePersist
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
@@ -73,4 +77,7 @@ public class Diario {
 
     public List<ArchivoMultimedia> getArchivos() { return archivos; }
     public void setArchivos(List<ArchivoMultimedia> archivos) { this.archivos = archivos; }
+
+    public List<MensajeDiario> getMensajes() { return mensajes; }
+    public void setMensajes(List<MensajeDiario> mensajes) { this.mensajes = mensajes; }
 }

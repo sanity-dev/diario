@@ -3,6 +3,8 @@ package com.example.microserviciodiario.controladores;
 import com.example.microserviciodiario.dto.DiarioRequestDTO; // <--- ¡ESTA ES LA LÍNEA QUE FALTABA!
 import com.example.microserviciodiario.modelos.Diario;
 import com.example.microserviciodiario.servicios.DiarioService;
+import com.example.microserviciodiario.dto.MensajeDiarioDTO;
+import com.example.microserviciodiario.dto.NuevoMensajeDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +76,30 @@ public class DiarioController {
             String email = (authentication != null) ? authentication.getName() : "test@example.com";
             diarioService.eliminarDiario(id, email);
             return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    // GET: Ver los mensajes de un diario
+    @GetMapping("/{id}/mensajes")
+    public ResponseEntity<List<MensajeDiarioDTO>> obtenerMensajes(@PathVariable UUID id, Authentication authentication) {
+        try {
+            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            List<MensajeDiarioDTO> mensajes = diarioService.obtenerMensajesDeDiario(id, email);
+            return ResponseEntity.ok(mensajes);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    // POST: Agregar un mensaje a un diario
+    @PostMapping("/{id}/mensajes")
+    public ResponseEntity<MensajeDiarioDTO> agregarMensaje(@PathVariable UUID id, @RequestBody NuevoMensajeDTO nuevoMensajeDTO, Authentication authentication) {
+        try {
+            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            MensajeDiarioDTO mensaje = diarioService.agregarMensajeADiario(id, nuevoMensajeDTO, email);
+            return new ResponseEntity<>(mensaje, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

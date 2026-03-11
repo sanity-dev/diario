@@ -37,7 +37,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Habilitar CORS
+                .cors(cors -> cors.disable()) // CORS lo maneja el API Gateway
                 .csrf(AbstractHttpConfigurer::disable) // Desactivar CSRF para APIs REST
                 .authorizeHttpRequests(authz -> authz
                         // RUTAS PÚBLICAS (Permitir entrar sin token)
@@ -60,19 +60,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 2. Configuración de CORS (Permitir peticiones del frontend Angular)
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
+    // 2. CORS deshabilitado a nivel microservicio (Manejado por API Gateway)
 
     // 3. Configuración del Encriptador de Contraseñas (BCrypt)
     @Bean

@@ -4,6 +4,10 @@ import com.example.microserviciodiario.modelos.Diario;
 import com.example.microserviciodiario.modelos.Usuario;
 import com.example.microserviciodiario.repositorios.DiarioRepository;
 import com.example.microserviciodiario.repositorios.UsuarioRepository;
+import com.example.microserviciodiario.repositorios.MensajeDiarioRepository;
+import com.example.microserviciodiario.modelos.MensajeDiario;
+import com.example.microserviciodiario.dto.MensajeDiarioDTO;
+import com.example.microserviciodiario.dto.NuevoMensajeDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -13,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class DiarioService {
@@ -22,6 +27,9 @@ public class DiarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private MensajeDiarioRepository mensajeDiarioRepository;
 
     // Obtener todos los diarios de UN usuario específico (por email)
     public List<Diario> obtenerDiariosPorEmail(String email) {
@@ -106,5 +114,45 @@ public class DiarioService {
             throw new RuntimeException("No tienes permiso para ver este diario");
         }
         return diario;
+    }
+
+    // Obtener los mensajes de un diario
+    public List<MensajeDiarioDTO> obtenerMensajesDeDiario(UUID diarioId, String emailUsuario) {
+        Diario diarioExistente = diarioRepository.findById(diarioId)
+                .orElseThrow(() -> new RuntimeException("Diario no encontrado"));
+
+        if (!diarioExistente.getUsuario().getEmail().equals(emailUsuario)) {
+            throw new RuntimeException("No tienes permiso para ver este diario");
+        }
+
+        List<MensajeDiario> mensajes = mensajeDiarioRepository.findByDiarioIdOrderByFechaEnvioAsc(diarioId);
+        return mensajes.stream()
+                .map(m -> new MensajeDiarioDTO(m.getId(), m.getContenido(), m.getTipo(), m.getFechaEnvio()))
+                .collect(Collectors.toList());
+    }
+
+    // Agregar un mensaje a un diario
+    @Transactional
+    public MensajeDiarioDTO agregarMensajeADiario(UUID diarioId, NuevoMensajeDTO nuevoMensajeDTO, String emailUsuario) {
+        Diario diarioExistente = diarioRepository.findById(diarioId)
+                .orElseThrow(() -> new RuntimeException("Diario no encontrado"));
+
+        if (!diarioExistente.getUsuario().getEmail().equals(emailUsuario)) {
+            throw new RuntimeException("No tienes permiso para editar este diario");
+        }
+
+        MensajeDiario mensaje = new MensajeDiario();
+        mensaje.setDiario(diarioExistente);
+        mensaje.setContenido(nuevoMensajeDTO.getContenido());
+        mensaje.setTipo(nuevoMensajeDTO.getTipo() != null ? nuevoMensajeDTO.getTipo() : "TEXTO");
+        mensaje.setFechaEnvio(LocalDateTime.now());
+
+        MensajeDiario guardado = mensajeDiarioRepository.save(mensaje);
+
+        // Actualizar la fecha de modificación del diario
+        diarioExistente.setFechaActualizacion(LocalDateTime.now());
+        diarioRepository.save(diarioExistente);
+
+        return new MensajeDiarioDTO(guardado.getId(), guardado.getContenido(), guardado.getTipo(), guardado.getFechaEnvio());
     }
 }
