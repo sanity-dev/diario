@@ -37,16 +37,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.disable()) // CORS lo maneja el API Gateway
+                .cors(AbstractHttpConfigurer::disable) // Desactivado porque el API Gateway ya maneja CORS
                 .csrf(AbstractHttpConfigurer::disable) // Desactivar CSRF para APIs REST
                 .authorizeHttpRequests(authz -> authz
+                        // Permitir preflight requests (OPTIONS) sin autenticación
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // RUTAS PÚBLICAS (Permitir entrar sin token)
                         .requestMatchers("/api/auth/login", "/api/usuarios/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll() // Permitir registrarse
 
                         // TODO: TEMPORAL - Quitar esto cuando el microservicio de autenticación esté
                         // listo
-                        .requestMatchers("/api/diarios/**").permitAll() // Diarios públicos temporalmente
+                        .requestMatchers("/api/diary/**").permitAll() // Diarios públicos temporalmente
 
                         // RUTAS PRIVADAS (Todo lo demás requiere token)
                         .anyRequest().authenticated())
@@ -60,7 +63,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 2. CORS deshabilitado a nivel microservicio (Manejado por API Gateway)
+
 
     // 3. Configuración del Encriptador de Contraseñas (BCrypt)
     @Bean

@@ -31,6 +31,13 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        // 0. Dejar pasar peticiones OPTIONS (preflight CORS) sin validar JWT
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 1. Buscar el header "Authorization"
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
