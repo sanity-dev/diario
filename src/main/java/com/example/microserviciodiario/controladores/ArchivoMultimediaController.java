@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/diary")
@@ -31,6 +33,23 @@ public class ArchivoMultimediaController {
             return new ResponseEntity<>(archivoService.guardarArchivo(diarioId, dto, email), HttpStatus.CREATED);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    // POST: Subir archivo directamente a GCS y asociarlo a un diario
+    @PostMapping("/{diarioId}/archivos/upload")
+    public ResponseEntity<?> uploadArchivo(
+            @PathVariable UUID diarioId,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+        try {
+            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            ArchivoMultimedia guardado = archivoService.uploadYGuardarArchivo(diarioId, file, email);
+            return new ResponseEntity<>(guardado, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException | IOException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 

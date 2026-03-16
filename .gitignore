@@ -39,3 +39,4 @@ build/
 
 # Secretos (¡VITAL!)
 .env
+gcs-credentials.json
