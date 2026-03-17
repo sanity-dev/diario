@@ -20,9 +20,11 @@ public class Diario {
     @Column(columnDefinition = "TEXT")
     private String contenido;
 
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 

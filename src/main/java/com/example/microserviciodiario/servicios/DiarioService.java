@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 @Service
 public class DiarioService {
@@ -30,6 +32,9 @@ public class DiarioService {
 
     @Autowired
     private MensajeDiarioRepository mensajeDiarioRepository;
+
+    @Autowired
+    private CloudStorageService cloudStorageService;
 
     // Obtener todos los diarios de UN usuario específico (por email)
     public List<Diario> obtenerDiariosPorEmail(String email) {
@@ -145,6 +150,34 @@ public class DiarioService {
         mensaje.setDiario(diarioExistente);
         mensaje.setContenido(nuevoMensajeDTO.getContenido());
         mensaje.setTipo(nuevoMensajeDTO.getTipo() != null ? nuevoMensajeDTO.getTipo() : "TEXTO");
+        mensaje.setFechaEnvio(LocalDateTime.now());
+
+        MensajeDiario guardado = mensajeDiarioRepository.save(mensaje);
+
+        // Actualizar la fecha de modificación del diario
+        diarioExistente.setFechaActualizacion(LocalDateTime.now());
+        diarioRepository.save(diarioExistente);
+
+        return new MensajeDiarioDTO(guardado.getId(), guardado.getContenido(), guardado.getTipo(), guardado.getFechaEnvio());
+    }
+
+    // Agregar un mensaje de tipo IMAGEN a un diario usando Cloud Storage
+    @Transactional
+    public MensajeDiarioDTO agregarMensajeImagenADiario(UUID diarioId, MultipartFile file, String emailUsuario) throws IOException {
+        Diario diarioExistente = diarioRepository.findById(diarioId)
+                .orElseThrow(() -> new RuntimeException("Diario no encontrado"));
+
+        if (!diarioExistente.getUsuario().getEmail().equals(emailUsuario)) {
+            throw new RuntimeException("No tienes permiso para editar este diario");
+        }
+
+        // Subir Archivo a Cloud Storage
+        String url = cloudStorageService.uploadFile(file, "diarios/" + diarioId.toString() + "/mensajes");
+
+        MensajeDiario mensaje = new MensajeDiario();
+        mensaje.setDiario(diarioExistente);
+        mensaje.setContenido(url);
+        mensaje.setTipo("IMAGEN");
         mensaje.setFechaEnvio(LocalDateTime.now());
 
         MensajeDiario guardado = mensajeDiarioRepository.save(mensaje);

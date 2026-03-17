@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/diary")
@@ -102,6 +104,20 @@ public class DiarioController {
             return new ResponseEntity<>(mensaje, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    // POST: Agregar un mensaje de tipo IMAGEN a un diario usando Google Cloud Storage
+    @PostMapping("/{id}/mensajes/upload")
+    public ResponseEntity<?> agregarMensajeImagen(@PathVariable UUID id, @RequestParam("file") MultipartFile file, Authentication authentication) {
+        try {
+            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            MensajeDiarioDTO mensaje = diarioService.agregarMensajeImagenADiario(id, file, email);
+            return new ResponseEntity<>(mensaje, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException | IOException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 }

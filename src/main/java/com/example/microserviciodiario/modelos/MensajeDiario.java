@@ -19,6 +19,7 @@ public class MensajeDiario {
     @Column(length = 50, nullable = false)
     private String tipo = "TEXTO"; // "TEXTO" o "IMAGEN"
 
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "fecha_envio", nullable = false)
     private LocalDateTime fechaEnvio;
 
