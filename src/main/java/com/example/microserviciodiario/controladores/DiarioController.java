@@ -26,14 +26,14 @@ public class DiarioController {
     // GET: Ver mis diarios
     @GetMapping
     public ResponseEntity<List<Diario>> misDiarios(Authentication authentication) {
-        String email = (authentication != null) ? authentication.getName() : "test@example.com";
+        String email = authentication.getName();
         return ResponseEntity.ok(diarioService.obtenerDiariosPorEmail(email));
     }
 
     // POST: Crear un diario
     @PostMapping
     public ResponseEntity<Diario> crear(@RequestBody DiarioRequestDTO diarioDTO, Authentication authentication) {
-        String email = (authentication != null) ? authentication.getName() : "test@example.com";
+        String email = authentication.getName();
 
         // Convertimos el DTO a la Entidad Diario manualmente
         Diario nuevoDiario = new Diario();
@@ -46,11 +46,10 @@ public class DiarioController {
         return new ResponseEntity<>(diarioGuardado, HttpStatus.CREATED);
     }
 
-    // GET: Ver un diario específico
     @GetMapping("/{id}")
     public ResponseEntity<Diario> obtenerUno(@PathVariable UUID id, Authentication authentication) {
         try {
-            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            String email = authentication.getName();
             return diarioService.obtenerDiarioPorId(id, email)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
@@ -59,23 +58,21 @@ public class DiarioController {
         }
     }
 
-    // PUT: Editar
     @PutMapping("/{id}")
     public ResponseEntity<Diario> editar(@PathVariable UUID id, @RequestBody Diario diario,
             Authentication authentication) {
         try {
-            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            String email = authentication.getName();
             return ResponseEntity.ok(diarioService.actualizarDiario(id, diario, email));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 403 si no es suyo
         }
     }
 
-    // DELETE: Borrar
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable UUID id, Authentication authentication) {
         try {
-            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            String email = authentication.getName();
             diarioService.eliminarDiario(id, email);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
@@ -83,11 +80,10 @@ public class DiarioController {
         }
     }
 
-    // GET: Ver los mensajes de un diario
     @GetMapping("/{id}/mensajes")
     public ResponseEntity<List<MensajeDiarioDTO>> obtenerMensajes(@PathVariable UUID id, Authentication authentication) {
         try {
-            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            String email = authentication.getName();
             List<MensajeDiarioDTO> mensajes = diarioService.obtenerMensajesDeDiario(id, email);
             return ResponseEntity.ok(mensajes);
         } catch (RuntimeException e) {
@@ -95,11 +91,10 @@ public class DiarioController {
         }
     }
 
-    // POST: Agregar un mensaje a un diario
     @PostMapping("/{id}/mensajes")
     public ResponseEntity<MensajeDiarioDTO> agregarMensaje(@PathVariable UUID id, @RequestBody NuevoMensajeDTO nuevoMensajeDTO, Authentication authentication) {
         try {
-            String email = (authentication != null) ? authentication.getName() : "test@example.com";
+            String email = authentication.getName();
             MensajeDiarioDTO mensaje = diarioService.agregarMensajeADiario(id, nuevoMensajeDTO, email);
             return new ResponseEntity<>(mensaje, HttpStatus.CREATED);
         } catch (RuntimeException e) {
@@ -107,17 +102,31 @@ public class DiarioController {
         }
     }
 
-    // POST: Agregar un mensaje de tipo IMAGEN a un diario usando Google Cloud Storage
     @PostMapping("/{id}/mensajes/upload")
-    public ResponseEntity<?> agregarMensajeImagen(@PathVariable UUID id, @RequestParam("file") MultipartFile file, Authentication authentication) {
+    public ResponseEntity<?> agregarMensajeImagen(
+            @PathVariable UUID id, 
+            @RequestParam("file") MultipartFile file, 
+            @RequestParam(value = "usuarioId", required = false, defaultValue = "default") String usuarioId,
+            Authentication authentication) {
         try {
-            String email = (authentication != null) ? authentication.getName() : "test@example.com";
-            MensajeDiarioDTO mensaje = diarioService.agregarMensajeImagenADiario(id, file, email);
+            String email = authentication.getName();
+            MensajeDiarioDTO mensaje = diarioService.agregarMensajeImagenADiario(id, file, email, usuarioId);
             return new ResponseEntity<>(mensaje, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (RuntimeException | IOException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/recuerdos")
+    public ResponseEntity<List<com.example.microserviciodiario.dto.RecuerdoDTO>> obtenerRecuerdos(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            List<com.example.microserviciodiario.dto.RecuerdoDTO> recuerdos = diarioService.obtenerRecuerdos(email);
+            return ResponseEntity.ok(recuerdos);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 }

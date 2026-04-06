@@ -58,7 +58,7 @@ public class ArchivoMultimediaService {
     }
 
     @Transactional
-    public ArchivoMultimedia uploadYGuardarArchivo(UUID diarioId, MultipartFile file, String emailUsuario) throws IOException {
+    public ArchivoMultimedia uploadYGuardarArchivo(UUID diarioId, MultipartFile file, String emailUsuario, String usuarioIdStr) throws IOException {
         // 1. Validar Diario y Dueño
         Diario diario = diarioRepository.findById(diarioId)
                 .orElseThrow(() -> new RuntimeException("Diario no encontrado"));
@@ -68,7 +68,7 @@ public class ArchivoMultimediaService {
         }
 
         // 2. Subir Archivo a Cloud Storage
-        String url = cloudStorageService.uploadFile(file, "diarios/" + diarioId.toString());
+        String url = cloudStorageService.uploadFile(file, "diarios/" + usuarioIdStr + "/mensajes");
 
         // 3. Determinar Tipo (Si es imagen, etc.)
         String contentType = file.getContentType();

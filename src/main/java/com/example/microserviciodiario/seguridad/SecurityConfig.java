@@ -47,10 +47,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/usuarios/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll() // Permitir registrarse
 
-                        // TODO: TEMPORAL - Quitar esto cuando el microservicio de autenticación esté
-                        // listo
-                        .requestMatchers("/api/diary/**").permitAll() // Diarios públicos temporalmente
-
                         // RUTAS PRIVADAS (Todo lo demás requiere token)
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session

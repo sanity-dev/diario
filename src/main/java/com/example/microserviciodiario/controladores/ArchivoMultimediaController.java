@@ -41,10 +41,11 @@ public class ArchivoMultimediaController {
     public ResponseEntity<?> uploadArchivo(
             @PathVariable UUID diarioId,
             @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "usuarioId", required = false, defaultValue = "default") String usuarioId,
             Authentication authentication) {
         try {
             String email = (authentication != null) ? authentication.getName() : "test@example.com";
-            ArchivoMultimedia guardado = archivoService.uploadYGuardarArchivo(diarioId, file, email);
+            ArchivoMultimedia guardado = archivoService.uploadYGuardarArchivo(diarioId, file, email, usuarioId);
             return new ResponseEntity<>(guardado, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

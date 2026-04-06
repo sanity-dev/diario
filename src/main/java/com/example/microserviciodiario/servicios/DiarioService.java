@@ -34,6 +34,9 @@ public class DiarioService {
     private MensajeDiarioRepository mensajeDiarioRepository;
 
     @Autowired
+    private com.example.microserviciodiario.repositorios.ArchivoMultimediaRepository archivoMultimediaRepository;
+
+    @Autowired
     private CloudStorageService cloudStorageService;
 
     // Obtener todos los diarios de UN usuario específico (por email)
@@ -163,7 +166,7 @@ public class DiarioService {
 
     // Agregar un mensaje de tipo IMAGEN a un diario usando Cloud Storage
     @Transactional
-    public MensajeDiarioDTO agregarMensajeImagenADiario(UUID diarioId, MultipartFile file, String emailUsuario) throws IOException {
+    public MensajeDiarioDTO agregarMensajeImagenADiario(UUID diarioId, MultipartFile file, String emailUsuario, String usuarioIdStr) throws IOException {
         Diario diarioExistente = diarioRepository.findById(diarioId)
                 .orElseThrow(() -> new RuntimeException("Diario no encontrado"));
 
@@ -172,7 +175,7 @@ public class DiarioService {
         }
 
         // Subir Archivo a Cloud Storage
-        String url = cloudStorageService.uploadFile(file, "diarios/" + diarioId.toString() + "/mensajes");
+        String url = cloudStorageService.uploadFile(file, "diarios/" + usuarioIdStr + "/mensajes");
 
         MensajeDiario mensaje = new MensajeDiario();
         mensaje.setDiario(diarioExistente);
@@ -187,5 +190,33 @@ public class DiarioService {
         diarioRepository.save(diarioExistente);
 
         return new MensajeDiarioDTO(guardado.getId(), guardado.getContenido(), guardado.getTipo(), guardado.getFechaEnvio());
+    }
+
+    // Obtener los recuerdos del usuario (imágenes enviadas por chat y archivos)
+    public List<com.example.microserviciodiario.dto.RecuerdoDTO> obtenerRecuerdos(String emailUsuario) {
+        // Validar que el usuario exista
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        List<com.example.microserviciodiario.dto.RecuerdoDTO> recuerdos = new java.util.ArrayList<>();
+
+        // Obtener imágenes de MensajeDiario
+        List<MensajeDiario> mensajes = mensajeDiarioRepository.findImagenesByUsuarioEmail(emailUsuario);
+        for (MensajeDiario m : mensajes) {
+            recuerdos.add(new com.example.microserviciodiario.dto.RecuerdoDTO(
+                    m.getId(), m.getContenido(), m.getFechaEnvio(), "Mensaje de Diario"));
+        }
+
+        // Obtener imágenes de ArchivoMultimedia
+        List<com.example.microserviciodiario.modelos.ArchivoMultimedia> archivos = archivoMultimediaRepository.findImagenesByUsuarioEmail(emailUsuario);
+        for (com.example.microserviciodiario.modelos.ArchivoMultimedia a : archivos) {
+            recuerdos.add(new com.example.microserviciodiario.dto.RecuerdoDTO(
+                    a.getId(), a.getUrl(), a.getFechaSubida(), "Archivo Adjunto"));
+        }
+
+        // Ordenar por fecha descendente
+        recuerdos.sort((r1, r2) -> r2.getFecha().compareTo(r1.getFecha()));
+
+        return recuerdos;
     }
 }
