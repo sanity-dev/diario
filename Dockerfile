@@ -26,7 +26,7 @@ FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
 # Exponemos el puerto
-EXPOSE 8081
+EXPOSE 8083
 
 # Copiamos el JAR generado
 COPY --from=build /app/target/*.jar app.jar
